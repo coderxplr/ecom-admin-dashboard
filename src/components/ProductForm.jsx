@@ -107,6 +107,7 @@ const ProductForm = () => {
     setEditingProduct(product);
     form.setFieldsValue({
       ProductName: product.ProductName,
+      ProductID: product.ProductID,
       Type: product.Type,
       Material: product.Material,
       Description: product.Description,
@@ -492,7 +493,7 @@ const ProductForm = () => {
                 </Button>
                 <Popconfirm
                   title="Are you sure you want to delete this product?"
-                  onConfirm={() => handleDelete(product._id)}
+                  onConfirm={() => handleDelete(product.ProductID)}
                   okText="Yes"
                   cancelText="No"
                 >
