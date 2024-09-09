@@ -62,52 +62,69 @@ const ProductForm = () => {
     formData.append('image', file);
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/upload`, formData);
+      // console.log("res: ",response);
       const url = response.data.imageUrl;
-      let images = [...imageUrl,url]
+      let images = [...imageUrl];
+      images.push(url);
+      // console.log("images: ",images)
       setImageUrl(images);
       onSuccess(images);
       message.success('Image uploaded successfully');
     } catch (error) {
       onError(error);
+      console.log("error: ",error)
       message.error('Image upload failed');
     }
   };
-  
+
   const onFinish = async (values) => {
     try {
       const processedValues = {
         ...values,
-        Variants: values.Variants.map(variant => ({
+        ProductId:editingProduct.ProductId,
+        Variants: values.Variants.map((variant) => ({
           ...variant,
-          Colors: variant.Colors.map(color => ({
+          Colors: variant.Colors.map((color) => ({
             ...color,
             // Extract only the image URLs
             Images: imageUrl, // Since `img` is already the URL
           })),
         })),
       };
-  
+
       if (editingProduct) {
-        await axios.put(`${import.meta.env.VITE_API_URL}/products/${editingProduct.ProductID}`, processedValues);
-        message.success('Product updated successfully');
+        console.log("editing prod:" , editingProduct)
+        await axios.put(
+          `${import.meta.env.VITE_API_URL}/products/${
+            editingProduct.ProductId
+          }`,
+          processedValues
+        );
+        message.success("Product updated successfully");
       } else {
-        await axios.post(`${import.meta.env.VITE_API_URL}/products`, processedValues);
-        message.success('Product added successfully');
+        await axios.post(
+          `${import.meta.env.VITE_API_URL}/products`,
+          processedValues
+        );
+        message.success("Product added successfully");
       }
       form.resetFields();
       fetchProducts();
       setIsModalOpen(false);
+      setImageUrl([]);
     } catch (error) {
-      message.error(editingProduct ? 'Failed to update product' : 'Failed to add product');
+      message.error(
+        editingProduct ? "Failed to update product" : "Failed to add product"
+      );
     }
   };
-  
 
   const handleEdit = (product) => {
+    console.log("product: ",product)
     setEditingProduct(product);
     form.setFieldsValue({
       ProductName: product.ProductName,
-      ProductID: product.ProductID,
+      ProductId: product.ProductId,
       Type: product.Type,
       Material: product.Material,
       Description: product.Description,
@@ -118,7 +135,7 @@ const ProductForm = () => {
         ...variant,
         Colors: variant.Colors.map((color) => ({
           ...color,
-          Images: color.Images.map((img) => ( img?.file?.response )),
+          Images: color.Images.map((img) => img?.file?.response),
         })),
         Sizes: variant.Sizes,
       })),
@@ -135,6 +152,12 @@ const ProductForm = () => {
     } catch (error) {
       message.error("Failed to delete product");
     }
+  };
+
+  const handleRemoveImage = (index) => {
+    let images = [...imageUrl];
+    images.splice(index, 1);
+    setImageUrl(images);
   };
 
   return (
@@ -277,28 +300,54 @@ const ProductForm = () => {
                                             fieldKey: imageFieldKey,
                                             ...imageRestField
                                           }) => (
-                                            <Form.Item
-                                              {...imageRestField}
-                                              label="Image"
-                                              name={[imageName, "url"]}
-                                              fieldKey={[imageFieldKey, "url"]}
+                                            <div
                                               key={imageKey}
+                                              className="flex items-center mb-4"
                                             >
-                                              <Upload
-                                                customRequest={
-                                                  handleImageUpload
-                                                }
-                                                listType="picture"
-                                                maxCount={1}
-                                                showUploadList={false}
+                                              <Form.Item
+                                                {...imageRestField}
+                                                label="Image"
+                                                name={[imageName, "url"]}
+                                                fieldKey={[
+                                                  imageFieldKey,
+                                                  "url",
+                                                ]}
                                               >
-                                                <Button
-                                                  icon={<UploadOutlined />}
+                                                <Upload
+                                                  customRequest={
+                                                    handleImageUpload
+                                                  }
+                                                  listType="picture"
+                                                  maxCount={1}
+                                                  showUploadList={false}
                                                 >
-                                                  Upload Image
-                                                </Button>
-                                              </Upload>
-                                            </Form.Item>
+                                                  <Button
+                                                    icon={<UploadOutlined />}
+                                                  >
+                                                    Upload Image
+                                                  </Button>
+                                                </Upload>
+                                              </Form.Item>
+                                              {imageUrl.length > 0 && (
+                                                <div className="ml-4 relative">
+                                                  <img
+                                                    src={imageUrl[imageKey]}
+                                                    alt="Uploaded Image"
+                                                    className="w-20 h-20 object-cover"
+                                                  />
+                                                  <button
+                                                    className="absolute top-0 right-0 bg-red-500 text-white p-1 hover:bg-red-700"
+                                                    onClick={() =>
+                                                      handleRemoveImage(
+                                                        imageKey
+                                                      )
+                                                    }
+                                                  >
+                                                    X
+                                                  </button>
+                                                </div>
+                                              )}
+                                            </div>
                                           )
                                         )}
                                         <Button
@@ -462,7 +511,7 @@ const ProductForm = () => {
         <div className="grid grid-cols-1 gap-6">
           {products.map((product) => (
             <Card
-              key={product._id}
+              key={product.ProductId}
               title={product.ProductName}
               extra={<span>{product.Type}</span>}
             >
@@ -493,7 +542,7 @@ const ProductForm = () => {
                 </Button>
                 <Popconfirm
                   title="Are you sure you want to delete this product?"
-                  onConfirm={() => handleDelete(product.ProductID)}
+                  onConfirm={() => handleDelete(product.ProductId)}
                   okText="Yes"
                   cancelText="No"
                 >
@@ -652,28 +701,54 @@ const ProductForm = () => {
                                             fieldKey: imageFieldKey,
                                             ...imageRestField
                                           }) => (
-                                            <Form.Item
-                                              {...imageRestField}
-                                              label="Image"
-                                              name={[imageName, "url"]}
-                                              fieldKey={[imageFieldKey, "url"]}
+                                            <div
                                               key={imageKey}
+                                              className="flex items-center mb-4"
                                             >
-                                              <Upload
-                                                customRequest={
-                                                  handleImageUpload
-                                                }
-                                                listType="picture"
-                                                maxCount={1}
-                                                showUploadList={false}
+                                              <Form.Item
+                                                {...imageRestField}
+                                                label="Image"
+                                                name={[imageName, "url"]}
+                                                fieldKey={[
+                                                  imageFieldKey,
+                                                  "url",
+                                                ]}
                                               >
-                                                <Button
-                                                  icon={<UploadOutlined />}
+                                                <Upload
+                                                  customRequest={
+                                                    handleImageUpload
+                                                  }
+                                                  listType="picture"
+                                                  maxCount={1}
+                                                  showUploadList={false}
                                                 >
-                                                  Upload Image
-                                                </Button>
-                                              </Upload>
-                                            </Form.Item>
+                                                  <Button
+                                                    icon={<UploadOutlined />}
+                                                  >
+                                                    Upload Image
+                                                  </Button>
+                                                </Upload>
+                                              </Form.Item>
+                                              {imageUrl.length > 0 && (
+                                                <div className="ml-4 relative">
+                                                  <img
+                                                    src={imageUrl[imageKey]}
+                                                    alt="Uploaded Image"
+                                                    className="w-20 h-20 object-cover"
+                                                  />
+                                                  <button
+                                                    className="absolute top-0 right-0 bg-red-500 text-white p-1 hover:bg-red-700"
+                                                    onClick={() =>
+                                                      handleRemoveImage(
+                                                        imageKey
+                                                      )
+                                                    }
+                                                  >
+                                                    X
+                                                  </button>
+                                                </div>
+                                              )}
+                                            </div>
                                           )
                                         )}
                                         <Button
