@@ -81,10 +81,10 @@ const ProductForm = () => {
     try {
       const processedValues = {
         ...values,
-        ProductId:editingProduct.ProductId,
-        Variants: values.Variants.map((variant) => ({
+        ProductId: editingProduct?.ProductId || values?.ProductId,
+        Variants: values?.Variants?.map((variant) => ({
           ...variant,
-          Colors: variant.Colors.map((color) => ({
+          Colors: variant?.Colors?.map((color) => ({
             ...color,
             // Extract only the image URLs
             Images: imageUrl, // Since `img` is already the URL
@@ -113,6 +113,7 @@ const ProductForm = () => {
       setIsModalOpen(false);
       setImageUrl([]);
     } catch (error) {
+      console.log("error: ",error)
       message.error(
         editingProduct ? "Failed to update product" : "Failed to add product"
       );
@@ -123,24 +124,25 @@ const ProductForm = () => {
     console.log("product: ",product)
     setEditingProduct(product);
     form.setFieldsValue({
-      ProductName: product.ProductName,
-      ProductId: product.ProductId,
-      Type: product.Type,
-      Material: product.Material,
-      Description: product.Description,
-      CategoryID: product.CategoryID,
-      Category: product.CategoryName,
-      IsRecommended: product.IsRecommended,
-      Variants: product.Variants.map((variant) => ({
+      ProductName: product?.ProductName,
+      ProductId: product?.ProductId,
+      Type: product?.Type,
+      Material: product?.Material,
+      Description: product?.Description,
+      CategoryID: product?.CategoryID,
+      Category: product?.CategoryName,
+      IsRecommended: product?.IsRecommended,
+      Variants: product?.Variants?.map((variant) => ({
         ...variant,
-        Colors: variant.Colors.map((color) => ({
+        Colors: variant?.Colors?.map((color) => ({
           ...color,
-          Images: color.Images.map((img) => img?.file?.response),
+          Images: color?.Images?.map((img) => img?.file?.response),
         })),
-        Sizes: variant.Sizes,
+        Sizes: variant?.Sizes,
       })),
     });
-    setImageUrl(product.Variants[0]?.Colors[0]?.Images[0] || "");
+    // setImageUrl(product?.Variants[0]?.Colors[0]?.Images?.[0] || "");
+    setImageUrl(product?.Variants[0]?.Colors[0]?.Images?.[0] ?? "");
     setIsModalOpen(true);
   };
 
